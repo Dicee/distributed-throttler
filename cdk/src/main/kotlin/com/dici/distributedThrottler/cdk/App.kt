@@ -9,9 +9,7 @@ object DistributedThrottlerApp {
     fun main(args: Array<String>) {
         val app = App()
 
-
-        ThrottlerStack(
-            app, StackProps.builder()
+        ThrottlerStack(app, StackProps.builder()
                 .env(Environment.builder()
                     .account(System.getenv("AWS_ACCOUNT_ID"))
                     .region("us-east-1")
