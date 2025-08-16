@@ -10,8 +10,8 @@ dependencies {
 val jarName = "distributed-throttler.jar"
 // used by the Docker build to get all runtime dependencies in the image
 tasks.register<Copy>("assemble-jars") {
-    from(layout.buildDirectory.file("libs/$jarName")) {
-        into("")
+    from(layout.buildDirectory.dir("classes/")) {
+        into("classes")
     }
 
     from(configurations.runtimeClasspath) {

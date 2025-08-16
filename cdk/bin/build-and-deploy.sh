@@ -46,7 +46,5 @@ if [ "$DEPLOY" = true ]; then
     rsync -av --delete "$APP_HOME/build/assets" "$CDK_HOME/docker"
 
     cd $CDK_HOME
-
-    # Docker needs sudo access
     cdk deploy
 fi
