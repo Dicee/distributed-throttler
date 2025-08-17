@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation("com.amazonaws:aws-lambda-java-core:1.2.3")
+    implementation("io.valkey:valkey-glide:2.0.1:linux-x86_64")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.2")
 }
 
