@@ -1,8 +1,10 @@
 local key = KEYS[1]
 local requested = tonumber(ARGV[1])
 local refill_rate = tonumber(ARGV[2])
-local now_ms = tonumber(ARGV[3])
-local max_capacity = tonumber(ARGV[4])
+local max_capacity = tonumber(ARGV[3])
+
+local time = redis.call('TIME')
+local now_ms = tonumber(time[1]) * 1000 + tonumber(time[2]) / 1000
 
 local token_bucket = redis.call('HMGET', key, 'remaining', 'last_granted_ms')
 local remaining = tonumber(token_bucket[1]) or max_capacity

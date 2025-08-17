@@ -11,10 +11,8 @@ class TokenBucketRateLimiterTest {
     fun test() {
         val glideClient = newLocalClient()
 
-        var clock = Clock.systemUTC()
-//        var clock = Clock.fixed(Instant.now(), ZoneId.of("UTC"))
-        var rateThreshold = 2
-        val rateLimiter = TokenBucketRateLimiter(rateThreshold, rateThreshold, TimeUnit.MINUTES,glideClient, clock)
+        var rateThreshold = 3
+        val rateLimiter = TokenBucketRateLimiter(rateThreshold, rateThreshold, TimeUnit.SECONDS,glideClient)
 
         val context = RequestContext("courtino", "test")
         var throttledCount = 0
@@ -27,7 +25,7 @@ class TokenBucketRateLimiterTest {
             else println("granted: ${++grantedCount}")
 
 //            Thread.sleep(Random.nextLong(100))
-            Thread.sleep(500)
+            Thread.sleep(250)
         }
     }
 }
