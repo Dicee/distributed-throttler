@@ -9,7 +9,6 @@
 ### Core logic
 
 - implement token bucket algorithm against a Memcached cache
-- implement leaky bucket algorithm against a Valkey cache
 - implement leaky bucket algorithm against a Memcached cache
 - implement sliding window counter algorithm against a Valkey cache
 - implement sliding window counter algorithm against a Memcached cache
@@ -28,6 +27,10 @@
 
 - implement Lambda endpoint that can switch between throttler implementations, apply throttling and publish metrics
 
+### Minor improvements
+
+- consider using coroutines, in particular for the leaky bucket implementations (though to do it well it's likely going to force moving everything to suspendable functions)
+
 ## Done
 
 ### Basic set up 
@@ -37,3 +40,4 @@
 - initial Kotlin CDK setup
 - initial Docker setup for a Kotlin Lambda
 - implement token bucket algorithm against a Valkey cache
+- implement leaky bucket algorithm against a Valkey cache

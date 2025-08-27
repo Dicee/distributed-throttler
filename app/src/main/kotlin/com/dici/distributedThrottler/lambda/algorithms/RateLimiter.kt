@@ -8,4 +8,9 @@ data class RequestContext(val identity: String, val operation: String) {
     fun toFineGrainKey(namespace: String) = "$namespace:$identity:$operation"
 }
 
-data class RateLimiterResult(val granted: Boolean)
+data class RateLimiterResult(val granted: Boolean) {
+    companion object {
+        val GRANTED = RateLimiterResult(true)
+        val DENIED = RateLimiterResult(false)
+    }
+}

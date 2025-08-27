@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets
 
 object LuaScripts {
     val UPDATE_TOKEN_BUCKET = Script(loadResource("update_token_bucket.lua"), false)
+    val GET_LEAKY_BUCKET_WAIT_TIME = Script(loadResource("get_leaky_bucket_wait_time.lua"), false)
 
     private fun loadResource(path: String): GlideString {
         val inputStream = LuaScripts.javaClass.getResourceAsStream(path) ?: throw FileNotFoundException("Missing resource <$path>")
