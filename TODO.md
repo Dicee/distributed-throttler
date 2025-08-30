@@ -1,5 +1,9 @@
 ## TODO
 
+### Basic set up
+
+- At the end of the project, make sure WSL doesn't start a local Redis server every time it boots. I prefer starting it manually.
+
 ### Infrastructure
 
 - set up logging and metric publishing

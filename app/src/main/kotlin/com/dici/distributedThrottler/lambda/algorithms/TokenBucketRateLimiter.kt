@@ -13,6 +13,9 @@ class TokenBucketRateLimiter(
     unit: TimeUnit,
     private val glideClient: GlideClient,
 ) : RateLimiter {
+    init {
+        unit.validateAtMostAsGranularAs(TimeUnit.MILLISECONDS)
+    }
     private val refillRate = rateThreshold / unit.toMillis(1).toDouble()
 
     override fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult {

@@ -33,7 +33,7 @@ private const val MINIMUM_LEAK_FREQ_MS = 10L
  * Now let's discuss the algorithm in details:
  * - when a request comes in, we call a Lua script on Redis
  * - the script first checks when the last leak occurred (if any) and the number of available tokens that have already been leaked and not used yet
- * - if the time passed since the last leak leak exceeds the leak period, we reset the amount of available tokens to the leak amount. This is because we
+ * - if the time passed since the last leak exceeds the leak period, we reset the amount of available tokens to the leak amount. This is because we
  *   do not want to allow the client to accumulate tokens and be able to exceed their quota. If they didn't use all the leak tokens during a leak period,
  *   these tokens are lost.
  * - if the number of available tokens is sufficient to grant the request, we allocate the tokens and return a wait time of 0 microseconds.
@@ -48,17 +48,12 @@ class LeakyBucketRateLimiter(
     private val glideClient: GlideClient
 ) : RateLimiter {
     init {
-        if (unit.toMillis(1L) < 1) {
-            throw IllegalArgumentException("Please define the desired rate at most at millisecond granularity. Unit was: $unit")
-        }
+        unit.validateAtMostAsGranularAs(TimeUnit.MILLISECONDS)
     }
 
     val leakProperties = determineLeakProperties(desiredRate, unit)
 
-    override fun grant(
-        requestedCapacity: Int,
-        context: RequestContext
-    ): RateLimiterResult {
+    override fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult {
         if (requestedCapacity > leakProperties.amount) {
             throw IllegalArgumentException("Cannot request more capacity in one go than the number of " +
                     "tokens leaked in each leak period (${leakProperties.amount}), but requested capacity was: $requestedCapacity")
