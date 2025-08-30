@@ -1,18 +1,16 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
-import com.dici.distributedThrottler.lambda.valkey.newLocalClient
+import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
-class SlidingWindowCounterRateLimiterManualTest {
+class SlidingWindowCounterRateLimiterManualTest : ValkeyTestBase() {
     // just a quick manual test, real unit tests coming soon
     @Test
     fun test() {
-        val glideClient = newLocalClient()
-
         val desiredRate = 1
         val unit = TimeUnit.SECONDS
         val rateLimiter = SlidingWindowCounterRateLimiter(desiredRate, unit, glideClient)

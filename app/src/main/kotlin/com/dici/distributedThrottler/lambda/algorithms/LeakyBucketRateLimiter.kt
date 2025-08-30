@@ -1,5 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
+import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
 import glide.api.GlideClient
 import glide.api.models.commands.ScriptOptions
@@ -45,7 +46,8 @@ private const val MINIMUM_LEAK_FREQ_MS = 10L
 class LeakyBucketRateLimiter(
     desiredRate: Int, // number of calls to grant within one unit of time
     unit: TimeUnit,
-    private val glideClient: GlideClient
+    private val glideClient: GlideClient,
+    private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
 ) : RateLimiter {
     init {
         unit.validateAtMostAsGranularAs(TimeUnit.MILLISECONDS)
@@ -86,6 +88,7 @@ class LeakyBucketRateLimiter(
                     leakProperties.frequencyMicros.toString(),
                     leakProperties.amount.toString(),
                     requestedCapacity.toString(),
+                    valkeyTime.currentNanos().toString(),
                 )
             )
             .build()

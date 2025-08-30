@@ -1,5 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
+import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
 import glide.api.GlideClient
 import glide.api.models.commands.ScriptOptions
@@ -12,6 +13,7 @@ class TokenBucketRateLimiter(
     private val burstRateThreshold: Int,
     unit: TimeUnit,
     private val glideClient: GlideClient,
+    private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
 ) : RateLimiter {
     init {
         unit.validateAtMostAsGranularAs(TimeUnit.MILLISECONDS)
@@ -26,6 +28,7 @@ class TokenBucketRateLimiter(
                     requestedCapacity.toString(),
                     refillRate.toString(),
                     burstRateThreshold.toString(),
+                    valkeyTime.currentNanos().toString(),
                 ))
                 .build()
         ).thenApply { (it as Long) == 1L }

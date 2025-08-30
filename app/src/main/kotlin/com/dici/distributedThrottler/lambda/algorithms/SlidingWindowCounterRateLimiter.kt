@@ -1,5 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
+import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.hashSlotKey
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
 import glide.api.GlideClient
@@ -38,6 +39,7 @@ class SlidingWindowCounterRateLimiter(
     callRateThreshold: Int,
     unit: TimeUnit,
     private val glideClient: GlideClient,
+    private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
 ) : RateLimiter {
     private val windowDurationMs: Int
     private val bucketDurationMs: Int
@@ -66,6 +68,7 @@ class SlidingWindowCounterRateLimiter(
                 windowDurationMs.toString(),
                 windowThreshold.toString(),
                 bucketDurationMs.toString(),
+                valkeyTime.currentNanos().toString(),
             ))
             .build()
         ).thenApply { (it as Long) == 1L }

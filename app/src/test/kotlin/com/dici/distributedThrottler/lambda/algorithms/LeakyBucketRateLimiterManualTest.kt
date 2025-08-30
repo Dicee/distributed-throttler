@@ -1,17 +1,15 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
-import com.dici.distributedThrottler.lambda.valkey.newLocalClient
+import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
-class LeakyBucketRateLimiterManualTest {
+class LeakyBucketRateLimiterManualTest : ValkeyTestBase() {
     // just a quick manual test, real unit tests coming soon
     @Test
     fun test() {
-        val glideClient = newLocalClient()
-
         val desiredRate = 30
         val unit = TimeUnit.MINUTES
         val rateLimiter = LeakyBucketRateLimiter(desiredRate, unit, glideClient)
