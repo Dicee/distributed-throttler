@@ -5,7 +5,7 @@ local max_capacity = tonumber(ARGV[3])
 local now_nanos = tonumber(ARGV[4]) -- injected for testing, but -1 in prod mode to use more accurate server time (eliminates clock drift)
 
 local now_ms
-if now_ms == -1 then
+if now_nanos == -1 then
     local time = redis.call('TIME')
     now_ms = tonumber(time[1]) * 1000 + tonumber(time[2]) / 1000
 else

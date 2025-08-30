@@ -6,10 +6,17 @@ import com.dici.distributedThrottler.lambda.valkey.FakeTicker
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import org.assertj.core.api.AbstractIntegerAssert
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.MethodSource
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MICROSECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.math.roundToInt
 
 private const val THRESHOLD = 3
@@ -27,6 +34,20 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
     fun setUp() {
         ticker = FakeTicker()
         rateLimiter = TokenBucketRateLimiter(THRESHOLD, BURST_THRESHOLD, TimeUnit.SECONDS, glideClient, ValkeyTime.forTesting(ticker))
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TimeUnit::class)
+    fun testConstructor_rejectsTimeUnitUnderMilliseconds(unit: TimeUnit) {
+        when (unit) {
+            NANOSECONDS, MICROSECONDS ->
+                assertThatThrownBy { TokenBucketRateLimiter(THRESHOLD, 1, unit, glideClient) }
+                    .isExactlyInstanceOf(IllegalArgumentException::class.java)
+                    .hasMessage("Please use MILLISECONDS resolution at most. Unit was: $unit")
+            else ->
+                assertThatCode { TokenBucketRateLimiter(THRESHOLD, 1, unit, glideClient) }
+                    .doesNotThrowAnyException()
+        }
     }
 
     @Test
@@ -114,9 +135,12 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
     }
 
     private fun assertThatRemainingIsNullFor(key: String) {
-        assertThat(glideClient.hget(key, "remaining").get()).isNull()
+        assertThat(getRemainingTokens(key)).isNull()
     }
 
-    private fun assertThatRemainingIs(key: String, expected: Int): AbstractIntegerAssert<*> =
-        assertThat(glideClient.hget(key, "remaining").get().toDouble().roundToInt()).isEqualTo(expected)
+    private fun assertThatRemainingIs(key: String, expected: Int) {
+        assertThat(getRemainingTokens(key).toDouble().roundToInt()).isEqualTo(expected)
+    }
+
+    private fun getRemainingTokens(key: String): String = glideClient.hget(key, "remaining").get()
 }
