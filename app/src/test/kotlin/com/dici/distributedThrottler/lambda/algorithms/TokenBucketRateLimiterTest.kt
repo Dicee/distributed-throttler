@@ -129,6 +129,11 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
         assertThat(rateLimiter.grant(3, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
+    @Test
+    fun testGrant_multiThreaded() {
+        baseMultiThreadedTest(Duration.ofSeconds(5), totalRequests = 300, maxRequestedCapacity = 5)
+    }
+
     private fun assertThatRemainingIsNullFor(key: String) {
         assertThat(getRemainingTokens(key)).isNull()
     }
@@ -138,4 +143,6 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
     }
 
     private fun getRemainingTokens(key: String): String? = glideClient.hget(key, "remaining").get()
+
+    override fun newRealTimeRateLimiter(tpsThreshold: Int) = TokenBucketRateLimiter(tpsThreshold, tpsThreshold, TimeUnit.SECONDS, glideClient)
 }

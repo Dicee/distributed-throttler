@@ -3,9 +3,9 @@ package com.dici.distributedThrottler.lambda.algorithms
 import com.dici.distributedThrottler.lambda.util.OTHER_CONTEXT
 import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
-import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
@@ -171,6 +171,24 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
         assertThat(highTpsRateLimiter.grant(180, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
+    @Test
+    fun testGrant_multiThreaded_lowTps() {
+        // 1 token leaked at a time because this is a low TPS, so we cannot request more than 1 token at a time
+        baseMultiThreadedTest(Duration.ofSeconds(5), totalRequests = 250, maxRequestedCapacity = 1)
+    }
+
+    @Test
+    @Disabled("Not managing to make this test stable so far. It may be due to the precision of Thread.sleep on my machine.")
+    fun testGrant_multiThreaded_highTps() {
+        baseMultiThreadedTest(
+            Duration.ofSeconds(5),
+            totalRequests = 6_000,
+            minRequestedCapacity = 12, // if we set it lower we won't manage to meet the target TPS since contrarily to other rate limiters, this one waits
+            maxRequestedCapacity = 12, // 1200 TPS leaked by increments of 12 tokens every 10 ms
+            maxSleepMs = -1, // this throttler already waits so if we add waits, we won't meet the target TPS
+        )
+    }
+
     private fun mockSleeper() {
         `when`(sleeper.sleep(anyLong(), anyInt())).thenAnswer { invocation ->
             ticker.advanceBy(Duration.ofMillis(invocation.getArgument(0)))
@@ -187,4 +205,6 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
     }
 
     private fun getAvailableTokens(key: String) = glideClient.hget(key, "available_tokens").get()
+
+    override fun newRealTimeRateLimiter(tpsThreshold: Int) = LeakyBucketRateLimiter(tpsThreshold, TimeUnit.SECONDS, glideClient)
 }

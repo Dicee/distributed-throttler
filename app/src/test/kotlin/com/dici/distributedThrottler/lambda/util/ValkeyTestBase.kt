@@ -1,12 +1,21 @@
 package com.dici.distributedThrottler.lambda.util
 
+import com.dici.distributedThrottler.lambda.algorithms.RateLimiter
+import com.dici.distributedThrottler.lambda.algorithms.RateLimiterResult
 import com.dici.distributedThrottler.lambda.algorithms.RequestContext
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.newLocalClient
 import glide.api.GlideClient
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.mockito.Mockito.spy
+import java.time.Duration
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 val OTHER_CONTEXT = RequestContext("other", "key")
 
@@ -15,7 +24,7 @@ val OTHER_CONTEXT = RequestContext("other", "key")
  * It would be cleaner to have an embedded Redis, with code managing the lifecycle of the Redis instance, however this is more than
  * good enough for testing a mini-project for fun and self-education purposes.
  */
-open class ValkeyTestBase {
+abstract class ValkeyTestBase {
     protected val context = RequestContext("dummy", "test")
     protected lateinit var glideClient: GlideClient
     protected lateinit var ticker: FakeTicker
@@ -30,4 +39,52 @@ open class ValkeyTestBase {
 
         ticker = FakeTicker()
     }
+
+
+    protected fun baseMultiThreadedTest(
+        duration: Duration,
+        totalRequests: Int,
+        maxRequestedCapacity: Int,
+        minRequestedCapacity: Int = 1,
+        maxSleepMs: Long = 50
+    ) {
+        val numThreads = 5
+        val executor = Executors.newFixedThreadPool(numThreads)
+        val grantedCalls = AtomicInteger(0)
+        val countDownLatch = CountDownLatch(1)
+
+        val rateLimiter = newRealTimeRateLimiter(totalRequests / duration.seconds.toInt())
+        try {
+            for (i in 0 until numThreads) {
+                executor.submit {
+                    countDownLatch.await()
+
+                    try {
+                        val endTime = System.currentTimeMillis() + duration.toMillis()
+
+                        while (System.currentTimeMillis() < endTime) {
+                            val capacity = minRequestedCapacity + Random.nextInt(maxRequestedCapacity - minRequestedCapacity + 1)
+                            val grant = rateLimiter.grant(capacity, context)
+
+                            if (grant == RateLimiterResult.GRANTED) grantedCalls.addAndGet(capacity)
+                            if (maxSleepMs > 0) Thread.sleep(Random.nextLong(maxSleepMs))
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        } finally {
+            countDownLatch.countDown()
+            executor.shutdown()
+            executor.awaitTermination(duration.seconds + 5, SECONDS)
+        }
+
+        val granted = grantedCalls.get()
+        val lowerBound = totalRequests * 0.85
+        val upperBound = totalRequests * 1.15
+        assertThat(granted).isBetween(lowerBound.toInt(), upperBound.toInt())
+    }
+
+    protected abstract fun newRealTimeRateLimiter(tpsThreshold: Int = 10): RateLimiter
 }

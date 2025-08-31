@@ -15,8 +15,11 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoSettings
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 private const val THRESHOLD = 20
 private val UNIT = MINUTES
@@ -235,6 +238,11 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
         assertThat(rateLimiter.grant(3, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
+    @Test
+    fun testGrant_multiThreaded() {
+        baseMultiThreadedTest(Duration.ofSeconds(10), totalRequests = 450, maxRequestedCapacity = 5)
+    }
+
     private fun assertThatBucketConfigurationWas(
         expectedWindowDuration: Duration,
         expectedWindowThreshold: Int,
@@ -279,4 +287,6 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     private fun getTimestamps(key: String) = glideClient.zscan(key, "0").get()[1] as Array<*>
 
     private fun getCounts(key: String) = glideClient.hgetall(key).get()
+
+    override fun newRealTimeRateLimiter(tpsThreshold: Int) = SlidingWindowCounterRateLimiter(tpsThreshold, SECONDS, glideClient)
 }

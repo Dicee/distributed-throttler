@@ -24,8 +24,6 @@
 - add unit tests for token bucket algorithm Memcached implementation
 - add unit tests for leaky bucket algorithm Memcached implementation 
 - add unit tests for sliding window counter algorithm Memcached implementation
-- add multi-threaded, real-time tests for all Valkey implementations
-- look into expiring old keys for all implementations
 
 #### Manual against real resources
 
@@ -52,6 +50,7 @@
 - implement leaky bucket algorithm against a Valkey cache
 - implement sliding window counter algorithm against a Valkey cache
 - ~~load the scripts rather than sending them every time~~ (actually Glide already takes care of that, as per the [documentation](https://valkey.io/valkey-glide/python/cluster_commands/#glide.async_commands.cluster_commands.ClusterCommands.invoke_script))
+- look into expiring old keys for all implementations
 
 ### Testing
 
@@ -61,3 +60,4 @@
 - add unit tests for token bucket algorithm Valkey implementation
 - add unit tests for leaky bucket algorithm Valkey implementation
 - add unit tests for sliding window counter algorithm Valkey implementation
+- add multi-threaded, real-time tests for all Valkey implementations
