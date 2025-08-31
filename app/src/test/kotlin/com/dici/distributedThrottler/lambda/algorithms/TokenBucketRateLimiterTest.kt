@@ -134,8 +134,8 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
     }
 
     private fun assertThatRemainingIs(key: String, expected: Int) {
-        assertThat(getRemainingTokens(key).toDouble().roundToInt()).isEqualTo(expected)
+        assertThat(getRemainingTokens(key)!!.toDouble().roundToInt()).isEqualTo(expected)
     }
 
-    private fun getRemainingTokens(key: String): String = glideClient.hget(key, "remaining").get()
+    private fun getRemainingTokens(key: String): String? = glideClient.hget(key, "remaining").get()
 }
