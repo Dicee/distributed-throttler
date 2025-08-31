@@ -33,6 +33,6 @@ class TokenBucketRateLimiter(
                 .build()
         ).thenApply { (it as Long) == 1L }
 
-        return RateLimiterResult(granted.get())
+        return RateLimiterResult.from(granted.get())
     }
 }

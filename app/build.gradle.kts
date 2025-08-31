@@ -9,6 +9,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.2")
 
     testImplementation("org.assertj:assertj-core:3.27.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
     testImplementation(libs.mockito)
     testImplementation("org.mockito:mockito-junit-jupiter:${libs.versions.mockito.get()}")

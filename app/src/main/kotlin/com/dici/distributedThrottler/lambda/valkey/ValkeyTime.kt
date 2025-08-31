@@ -2,8 +2,10 @@ package com.dici.distributedThrottler.lambda.valkey
 
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.TimeUnit.MICROSECONDS
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 private const val SERVER_SIDE_TIME = -1L
 
@@ -39,6 +41,7 @@ class FakeTicker(instant: Instant = Instant.EPOCH) {
     }
 
     fun setAt(instant: Instant) {
-        _nanos = MICROSECONDS.convert(instant.toEpochMilli(), MILLISECONDS) + instant.nano
+        // note that the nano field contains the milliseconds of the last second
+        _nanos = NANOSECONDS.convert(instant.toEpochMilli() / 1000, SECONDS) + instant.nano
     }
 }

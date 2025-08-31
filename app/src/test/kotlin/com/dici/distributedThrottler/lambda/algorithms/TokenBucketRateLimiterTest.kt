@@ -23,13 +23,12 @@ private const val DEFAULT_KEY = "token-bucket:dummy:test"
 private const val OTHER_KEY = "token-bucket:other:key"
 
 class TokenBucketRateLimiterTest : ValkeyTestBase() {
-    private lateinit var ticker: FakeTicker
     private lateinit var rateLimiter: TokenBucketRateLimiter
 
     @BeforeEach
     fun setUp() {
         ticker = FakeTicker()
-        rateLimiter = TokenBucketRateLimiter(THRESHOLD, BURST_THRESHOLD, TimeUnit.SECONDS, glideClient, ValkeyTime.forTesting(ticker))
+        rateLimiter = TokenBucketRateLimiter(THRESHOLD, BURST_THRESHOLD, TimeUnit.SECONDS, glideClient, valkeyTime)
     }
 
     @ParameterizedTest

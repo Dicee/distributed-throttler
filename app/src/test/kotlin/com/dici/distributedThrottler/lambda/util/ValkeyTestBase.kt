@@ -1,9 +1,12 @@
 package com.dici.distributedThrottler.lambda.util
 
 import com.dici.distributedThrottler.lambda.algorithms.RequestContext
+import com.dici.distributedThrottler.lambda.valkey.FakeTicker
+import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.newLocalClient
 import glide.api.GlideClient
 import org.junit.jupiter.api.BeforeEach
+import org.mockito.Mockito.spy
 
 val OTHER_CONTEXT = RequestContext("other", "key")
 
@@ -15,10 +18,16 @@ val OTHER_CONTEXT = RequestContext("other", "key")
 open class ValkeyTestBase {
     protected val context = RequestContext("dummy", "test")
     protected lateinit var glideClient: GlideClient
+    protected lateinit var ticker: FakeTicker
+
+    protected val valkeyTime: ValkeyTime
+        get() = ValkeyTime.forTesting(ticker)
 
     @BeforeEach
     fun beforeEach() {
-        glideClient = newLocalClient()
+        glideClient = spy(newLocalClient())
         glideClient.flushall().get()
+
+        ticker = FakeTicker()
     }
 }

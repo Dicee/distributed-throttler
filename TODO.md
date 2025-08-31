@@ -15,16 +15,17 @@
 - implement token bucket algorithm against a Memcached cache
 - implement leaky bucket algorithm against a Memcached cache
 - implement sliding window counter algorithm against a Memcached cache
+- look into expiring old keys for all implementations
+- load the scripts rather than sending them every time
+- add multi-threaded, real-time tests for all Valkey implementations
 
 ### Testing
 
 #### Unit tests
 
 - set up unit tests using a local Memcached instance ([reference](https://www.memcachier.com/documentation/local-usage))
-- add unit tests for token bucket algorithm Memcached implementation 
-- add unit tests for leaky bucket algorithm Valkey implementation 
+- add unit tests for token bucket algorithm Memcached implementation
 - add unit tests for leaky bucket algorithm Memcached implementation 
-- add unit tests for sliding window counter algorithm Valkey implementation
 - add unit tests for sliding window counter algorithm Memcached implementation
 
 #### Manual against real resources
@@ -58,3 +59,5 @@
 
 - set up unit tests using a local Redis instance (maybe [this](https://www.baeldung.com/spring-embedded-redis)?)
 - add unit tests for token bucket algorithm Valkey implementation
+- add unit tests for leaky bucket algorithm Valkey implementation
+- add unit tests for sliding window counter algorithm Valkey implementation

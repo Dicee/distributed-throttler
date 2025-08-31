@@ -37,7 +37,6 @@ private const val OTHER_KEY = "leaky-bucket:other:key"
 
 @ExtendWith(MockitoExtension::class)
 class LeakyBucketRateLimiterTest : ValkeyTestBase() {
-    private lateinit var ticker: FakeTicker
     private lateinit var lowTpsRateLimiter: LeakyBucketRateLimiter
     private lateinit var highTpsRateLimiter: LeakyBucketRateLimiter
 
@@ -46,8 +45,8 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
     @BeforeEach
     fun setUp() {
         ticker = FakeTicker()
-        lowTpsRateLimiter = LeakyBucketRateLimiter(LOW_TPS, LOW_TPS_TIME_UNIT, glideClient, ValkeyTime.forTesting(ticker), sleeper)
-        highTpsRateLimiter = LeakyBucketRateLimiter(HIGH_TPS, HIGH_TPS_TIME_UNIT, glideClient, ValkeyTime.forTesting(ticker), sleeper)
+        lowTpsRateLimiter = LeakyBucketRateLimiter(LOW_TPS, LOW_TPS_TIME_UNIT, glideClient, valkeyTime, sleeper)
+        highTpsRateLimiter = LeakyBucketRateLimiter(HIGH_TPS, HIGH_TPS_TIME_UNIT, glideClient, valkeyTime, sleeper)
     }
 
     @ParameterizedTest
