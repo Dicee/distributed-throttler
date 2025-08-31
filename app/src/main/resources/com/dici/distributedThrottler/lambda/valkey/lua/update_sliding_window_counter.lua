@@ -5,9 +5,15 @@ local requested = tonumber(ARGV[1])
 local window_duration_ms = tonumber(ARGV[2])
 local window_threshold = tonumber(ARGV[3])
 local bucket_duration_ms = tonumber(ARGV[4])
+local now_nanos = tonumber(ARGV[5]) -- injected for testing, but -1 in prod mode to use more accurate server time (eliminates clock drift)
 
-local time = redis.call('TIME')
-local now_ms = tonumber(time[1]) * 1000 + tonumber(time[2]) / 1000
+local now_ms
+if now_nanos == -1 then
+    local time = redis.call('TIME')
+    now_ms = tonumber(time[1]) * 1000 + tonumber(time[2]) / 1000
+else
+    now_ms = math.floor(now_nanos / 1000 / 1000)
+end
 
 -- We only expire a count that doesn't intersect the window's duration at all, which is why we have to subtract the bucket duration, since we store
 -- the start timestamp of the bucket: if the start is outside of the window it doesn't mean the entire bucket is

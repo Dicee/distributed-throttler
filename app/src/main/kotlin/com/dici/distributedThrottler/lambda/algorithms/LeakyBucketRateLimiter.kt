@@ -43,11 +43,14 @@ private const val MINIMUM_LEAK_FREQ_MS = 10L
  *   this amount (with some jitter to prevent multiple hosts hammering Redis simultaneously), and then will retry obtaining a token. If the Lua script returns
  *   a wait time again, the throttler immediately returns DENIED, otherwise it returns GRANTED.
  */
+private val sleeperWithJitter = Sleeper { millis, extraNanos -> Thread.sleep(millis + Random.nextLong(5), extraNanos) }
+
 class LeakyBucketRateLimiter(
     desiredRate: Int, // number of calls to grant within one unit of time
     unit: TimeUnit,
     private val glideClient: GlideClient,
     private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
+    private val sleeper: Sleeper = sleeperWithJitter,
 ) : RateLimiter {
     init {
         unit.validateAtMostAsGranularAs(TimeUnit.MILLISECONDS)
@@ -65,12 +68,11 @@ class LeakyBucketRateLimiter(
         if (waitTimeMicros == 0L) return RateLimiterResult.GRANTED
 
         try {
-            val jitterMs = Random.nextLong(5)
             val waitTimeMs = waitTimeMicros / 1000L
             val extraWaitNanos = ((waitTimeMicros - waitTimeMs * 1000) * 1000).toInt()
             // though the system may not be able to honor such precision, we use the most precise sleep signature
             // TODO: see about using coroutines instead of keeping the thread busy
-            Thread.sleep(waitTimeMs + jitterMs, extraWaitNanos)
+            sleeper.sleep(waitTimeMs, extraWaitNanos)
         } catch (_: InterruptedException) {
             return RateLimiterResult.DENIED
         }
@@ -113,4 +115,9 @@ data class LeakProperties(val frequencyMicros: Long, val amount: Double)
 fun Double.roundTo(decimals: Int): Double {
     val multiplier = 10.0.pow(decimals.toDouble())
     return (this * multiplier).roundToInt() / multiplier
+}
+
+// for testing
+fun interface Sleeper {
+    fun sleep(millis: Long, extraNanos: Int)
 }
