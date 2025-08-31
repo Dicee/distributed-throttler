@@ -27,24 +27,28 @@ if table.getn(counts) > 0 then
     for i, expired_count in ipairs(counts) do
         window_count = window_count - expired_count
     end
-    if window_count + requested < 0 then
-        error('Total count should never be negative. ')
-    end
     redis.call('ZREM', timestamps_key, unpack(expired_timestamps))
     redis.call('HDEL', counts_key, unpack(expired_timestamps))
 end
 
 local current_bucket_start = now_ms - (now_ms % bucket_duration_ms)
+local granted = 0
 
 if window_count + requested <= window_threshold then
-    if window_count + requested < 0 then
-        error('Total count should never be negative. ')
-    end
     redis.call('HSET', counts_key, 'total_count', window_count + requested)
     redis.call('HINCRBY', counts_key, current_bucket_start, requested)
     redis.call('ZADD', timestamps_key, current_bucket_start, current_bucket_start)
-    return 1
+
+    granted = 1
 else
     redis.call('HSET', counts_key, 'total_count', window_count)
-    return 0
 end
+
+-- We should not suffer from race conditions with one key being expired and the other not because Valkey both has active and lazy expiry.
+-- In other words, the ttl is checked before reading the value, so even if the key is still present it will be considered missing. This
+-- behaviour is documented here: https://valkey.io/commands/expire/
+local ttl = math.ceil(window_duration_ms * 2)
+redis.call('PEXPIRE', timestamps_key, ttl)
+redis.call('PEXPIRE', counts_key, ttl)
+
+return granted

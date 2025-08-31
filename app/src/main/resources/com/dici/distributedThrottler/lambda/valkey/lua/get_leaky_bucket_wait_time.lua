@@ -28,8 +28,13 @@ if last_leaked_micros == nil or last_leaked_micros + leak_freq_micros <= now_mic
     available_tokens = leak_amount
 end
 
+
 if available_tokens >= requested_tokens then
     redis.call('HMSET', key, LAST_LEAKED_MICROS, now_micros, AVAILABLE_TOKENS, available_tokens - requested_tokens)
+
+    local ttl = math.ceil(leak_freq_micros / 1000 * 2) -- after waiting two leak periods we are for sure in the same state as if the key didn't exist
+    redis.call('PEXPIRE', key, ttl)
+
     return 0
 else
     return last_leaked_micros + leak_freq_micros - now_micros

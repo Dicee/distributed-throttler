@@ -21,6 +21,10 @@ remaining = math.min(max_capacity, elapsed * refill_rate + remaining)
 
 if requested <= remaining then
 	redis.call('HMSET', key, 'remaining', remaining - requested, 'last_granted_ms', now_ms)
+
+    local ttl = math.ceil(2 * max_capacity / refill_rate) -- twice the amount of time it takes to refill the tokens entirely
+    redis.call('PEXPIRE', key, ttl)
+
 	return 1
 else
 	return 0

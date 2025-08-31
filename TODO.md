@@ -15,7 +15,6 @@
 - implement token bucket algorithm against a Memcached cache
 - implement leaky bucket algorithm against a Memcached cache
 - implement sliding window counter algorithm against a Memcached cache
-- look into expiring old keys for all implementations
 
 ### Testing
 
@@ -26,6 +25,7 @@
 - add unit tests for leaky bucket algorithm Memcached implementation 
 - add unit tests for sliding window counter algorithm Memcached implementation
 - add multi-threaded, real-time tests for all Valkey implementations
+- look into expiring old keys for all implementations
 
 #### Manual against real resources
 
