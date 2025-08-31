@@ -3,6 +3,7 @@ package com.dici.distributedThrottler.cdk;
 import software.amazon.awscdk.Duration
 import software.amazon.awscdk.Stack
 import software.amazon.awscdk.StackProps
+import software.amazon.awscdk.services.iam.ManagedPolicy
 import software.amazon.awscdk.services.iam.Role
 import software.amazon.awscdk.services.iam.ServicePrincipal
 import software.amazon.awscdk.services.lambda.DockerImageCode
@@ -22,6 +23,7 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
         val role = Role.Builder.create(this, roleName)
             .roleName(roleName)
             .assumedBy(ServicePrincipal("lambda.amazonaws.com"))
+            .managedPolicies(listOf(ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")))
             .build()
 
         return DockerImageFunction.Builder.create(this, functionName)

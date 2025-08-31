@@ -6,7 +6,6 @@
 
 ### Infrastructure
 
-- set up logging and metric publishing
 - set up a Valkey cache with CDK
 - set up a Memcached cache with CDK
 
@@ -43,6 +42,10 @@
 - initial AWS account setup, complete with SSO access
 - initial Kotlin CDK setup
 - initial Docker setup for a Kotlin Lambda
+
+### Infrastructure
+
+- set up logging and metric publishing
 
 ### Core logic
 

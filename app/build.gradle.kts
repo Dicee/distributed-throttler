@@ -8,6 +8,7 @@ dependencies {
     implementation("io.valkey:valkey-glide:2.0.1:linux-x86_64")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.2")
 
+    implementation("software.amazon.cloudwatchlogs:aws-embedded-metrics:4.2.0")
     implementation("org.apache.logging.log4j:log4j-api:2.13.3")
     runtimeOnly("org.apache.logging.log4j:log4j-core:2.13.3")
     runtimeOnly("com.amazonaws:aws-lambda-java-log4j2:1.6.0")
