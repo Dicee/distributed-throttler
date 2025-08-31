@@ -5,7 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler
 
 class Handler : RequestHandler<User, Unit> {
     override fun handleRequest(user: User, context: Context) {
-        println("Hello ${user.name}")
+        log.info("Hello ${user.name}")
+        println("Hello ${user.name} with a println")
     }
 }
 

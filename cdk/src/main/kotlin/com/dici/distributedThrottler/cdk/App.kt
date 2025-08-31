@@ -12,7 +12,7 @@ object DistributedThrottlerApp {
         ThrottlerStack(app, StackProps.builder()
                 .env(Environment.builder()
                     .account(System.getenv("AWS_ACCOUNT_ID"))
-                    .region("us-east-1")
+                    .region("eu-north-1")
                     .build()
                 )
                 .build()
