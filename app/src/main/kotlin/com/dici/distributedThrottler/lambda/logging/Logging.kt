@@ -1,4 +1,4 @@
-package com.dici.distributedThrottler.lambda
+package com.dici.distributedThrottler.lambda.logging
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
