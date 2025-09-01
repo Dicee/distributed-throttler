@@ -1,5 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
+import com.dici.distributedThrottler.lambda.config.ThrottlingScope
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.hashSlotKey
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts

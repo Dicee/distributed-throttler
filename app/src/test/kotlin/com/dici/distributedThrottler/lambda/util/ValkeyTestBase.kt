@@ -2,7 +2,7 @@ package com.dici.distributedThrottler.lambda.util
 
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiter
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiterResult
-import com.dici.distributedThrottler.lambda.algorithms.ThrottlingScope
+import com.dici.distributedThrottler.lambda.config.ThrottlingScope
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.newLocalClient

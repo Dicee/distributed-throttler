@@ -1,17 +1,10 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
+import com.dici.distributedThrottler.lambda.config.ThrottlingScope
 import java.util.concurrent.TimeUnit
 
 interface RateLimiter {
     fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult
-}
-
-data class ThrottlingScope(val identity: String, val operation: String) {
-    fun toThrottlingKey(namespace: String) = "$namespace:$identity:$operation"
-
-    companion object {
-        fun global(identity: String) = ThrottlingScope(identity, "*")
-    }
 }
 
 enum class RateLimiterResult {
