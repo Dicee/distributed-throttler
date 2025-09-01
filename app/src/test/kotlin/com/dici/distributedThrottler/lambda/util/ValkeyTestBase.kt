@@ -2,7 +2,7 @@ package com.dici.distributedThrottler.lambda.util
 
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiter
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiterResult
-import com.dici.distributedThrottler.lambda.algorithms.RequestContext
+import com.dici.distributedThrottler.lambda.algorithms.ThrottlingScope
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.newLocalClient
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
-val OTHER_CONTEXT = RequestContext("other", "key")
+val OTHER_SCOPE = ThrottlingScope("other", "key")
 
 /**
  * This class relies on the developer or the machine running the test to have a pre-existing Redis or Valky client running locally.
@@ -25,7 +25,7 @@ val OTHER_CONTEXT = RequestContext("other", "key")
  * good enough for testing a mini-project for fun and self-education purposes.
  */
 abstract class ValkeyTestBase {
-    protected val context = RequestContext("dummy", "test")
+    protected val scope = ThrottlingScope("dummy", "test")
     protected lateinit var glideClient: GlideClient
     protected lateinit var ticker: FakeTicker
 
@@ -64,7 +64,7 @@ abstract class ValkeyTestBase {
 
                         while (System.currentTimeMillis() < endTime) {
                             val capacity = minRequestedCapacity + Random.nextInt(maxRequestedCapacity - minRequestedCapacity + 1)
-                            val grant = rateLimiter.grant(capacity, context)
+                            val grant = rateLimiter.grant(capacity, scope)
 
                             if (grant == RateLimiterResult.GRANTED) grantedCalls.addAndGet(capacity)
                             if (maxSleepMs > 0) Thread.sleep(Random.nextLong(maxSleepMs))

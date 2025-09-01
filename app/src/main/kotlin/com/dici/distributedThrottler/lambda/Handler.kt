@@ -13,9 +13,6 @@ class Handler : RequestHandler<User, String> {
         log.info("Hello ${user.name}")
         println("Hello ${user.name} with a println")
 
-//        val config = EnvironmentConfigurationProvider.getConfig();
-//        config.setServiceName("Throttler")
-
         val metrics = MetricsLogger()
         metrics.setNamespace("courtino-test")
         metrics.putDimensions(DimensionSet.of("Service", "Throttler"))

@@ -58,13 +58,13 @@ class LeakyBucketRateLimiter(
 
     val leakProperties = determineLeakProperties(desiredRate, unit)
 
-    override fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult {
+    override fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult {
         if (requestedCapacity > leakProperties.amount) {
             throw IllegalArgumentException("Cannot request more capacity in one go than the number of " +
                     "tokens leaked in each leak period (${leakProperties.amount}), but requested capacity was: $requestedCapacity")
         }
 
-        val waitTimeMicros = getWaitTimeMicros(requestedCapacity, context)
+        val waitTimeMicros = getWaitTimeMicros(requestedCapacity, scope)
         if (waitTimeMicros == 0L) return RateLimiterResult.GRANTED
 
         try {
@@ -78,13 +78,13 @@ class LeakyBucketRateLimiter(
         }
 
         // we allow only one retry and deny the call if the retry is unsuccessful at obtaining a token
-        val retryWaitTimeMicros = getWaitTimeMicros(requestedCapacity, context)
+        val retryWaitTimeMicros = getWaitTimeMicros(requestedCapacity, scope)
         return if (retryWaitTimeMicros == 0L) RateLimiterResult.GRANTED else RateLimiterResult.DENIED
     }
 
-    private fun getWaitTimeMicros(requestedCapacity: Int, context: RequestContext) = glideClient.invokeScript(
+    private fun getWaitTimeMicros(requestedCapacity: Int, scope: ThrottlingScope) = glideClient.invokeScript(
         LuaScripts.GET_LEAKY_BUCKET_WAIT_TIME, ScriptOptions.builder()
-            .key(context.toFineGrainKey(NAMESPACE))
+            .key(scope.toThrottlingKey(NAMESPACE))
             .args(
                 listOf(
                     leakProperties.frequencyMicros.toString(),

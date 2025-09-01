@@ -3,11 +3,15 @@ package com.dici.distributedThrottler.lambda.algorithms
 import java.util.concurrent.TimeUnit
 
 interface RateLimiter {
-    fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult
+    fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult
 }
 
-data class RequestContext(val identity: String, val operation: String) {
-    fun toFineGrainKey(namespace: String) = "$namespace:$identity:$operation"
+data class ThrottlingScope(val identity: String, val operation: String) {
+    fun toThrottlingKey(namespace: String) = "$namespace:$identity:$operation"
+
+    companion object {
+        fun global(identity: String) = ThrottlingScope(identity, "*")
+    }
 }
 
 enum class RateLimiterResult {

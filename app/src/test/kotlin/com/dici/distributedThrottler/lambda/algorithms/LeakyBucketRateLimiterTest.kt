@@ -1,6 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
-import com.dici.distributedThrottler.lambda.util.OTHER_CONTEXT
+import com.dici.distributedThrottler.lambda.util.OTHER_SCOPE
 import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
 import org.assertj.core.api.Assertions.*
@@ -66,7 +66,7 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
     @Test
     fun testGrant_newKey_lowTps_grantsSingleCall() {
         assertThatAvailableTokensAreNullFor(DEFAULT_KEY)
-        assertThat(lowTpsRateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(lowTpsRateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatAvailableTokensAre(DEFAULT_KEY, 0)
 
         verifyNoInteractions(sleeper)
@@ -77,7 +77,7 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
         assertThatAvailableTokensAreNullFor(DEFAULT_KEY)
 
         val requested = 53
-        assertThat(highTpsRateLimiter.grant(requested, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(requested, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatAvailableTokensAre(DEFAULT_KEY, HIGH_TPS_EXPECTED_LEAK_AMOUNT - requested)
 
         verifyNoInteractions(sleeper)
@@ -87,8 +87,8 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
     fun testGrant_successiveGrantsWhileTokensAreAvailable() {
         val (r1, r2) = 50 to 135
 
-        assertThat(highTpsRateLimiter.grant(r1, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(highTpsRateLimiter.grant(r2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(r1, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(r2, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatAvailableTokensAre(DEFAULT_KEY, HIGH_TPS_EXPECTED_LEAK_AMOUNT - r1 - r2)
 
         verifyNoInteractions(sleeper)
@@ -121,23 +121,23 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
         advanceDuration: Duration,
     ) {
         assertThatAvailableTokensAreNullFor(DEFAULT_KEY)
-        assertThat(rateLimiter.grant(expectedLeakAmount, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(expectedLeakAmount, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         // denied for a call that happens just after (we simulate that by not sleeping)
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
 
         // advance the timeline a little to check that the returned wait time is well calculated
         ticker.advanceBy(advanceDuration)
 
         mockSleeper()
 
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThat(ticker.nanos).isEqualTo(expectedLeakPeriod.toNanos()) // we waited until the next leak period
     }
 
     @Test
     fun testGrant_requestedCapacityExceedsLeakAmount_lowTps() {
-        assertThatThrownBy { lowTpsRateLimiter.grant(2, context) }
+        assertThatThrownBy { lowTpsRateLimiter.grant(2, scope) }
             .isExactlyInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("Cannot request more capacity in one go than the number of tokens leaked in each leak period (1.0), but requested capacity was: 2")
 
@@ -147,7 +147,7 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_requestedCapacityExceedsLeakAmount_highTps() {
-        assertThatThrownBy { highTpsRateLimiter.grant(301, context) }
+        assertThatThrownBy { highTpsRateLimiter.grant(301, scope) }
             .isExactlyInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("Cannot request more capacity in one go than the number of tokens leaked in each leak period (300.0), but requested capacity was: 301")
 
@@ -161,14 +161,14 @@ class LeakyBucketRateLimiterTest : ValkeyTestBase() {
         assertThatAvailableTokensAreNullFor(OTHER_KEY)
 
         val (r1, r2) = (160 to 34)
-        assertThat(highTpsRateLimiter.grant(r1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(r1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatAvailableTokensAre(DEFAULT_KEY, HIGH_TPS_EXPECTED_LEAK_AMOUNT - r1)
 
-        assertThat(highTpsRateLimiter.grant(r2, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(r2, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatAvailableTokensAre(OTHER_KEY, HIGH_TPS_EXPECTED_LEAK_AMOUNT - r2)
 
-        assertThat(highTpsRateLimiter.grant(180, context)).isEqualTo(RateLimiterResult.DENIED)
-        assertThat(highTpsRateLimiter.grant(180, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(highTpsRateLimiter.grant(180, scope)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(highTpsRateLimiter.grant(180, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
     @Test

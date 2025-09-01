@@ -1,6 +1,6 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
-import com.dici.distributedThrottler.lambda.util.OTHER_CONTEXT
+import com.dici.distributedThrottler.lambda.util.OTHER_SCOPE
 import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import glide.api.models.commands.ScriptOptions
 import org.assertj.core.api.Assertions.*
@@ -15,11 +15,8 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoSettings
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.random.Random
 
 private const val THRESHOLD = 20
 private val UNIT = MINUTES
@@ -60,7 +57,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     fun testGrant_bucketConfiguration_largeTimeUnit_usesTimeUnit() {
         val callRateThreshold = 300
         rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, MINUTES, glideClient, valkeyTime)
-        rateLimiter.grant(1, context)
+        rateLimiter.grant(1, scope)
 
         // voluntarily hardcoding rather than calculating values so that the test's code does not simply duplicate the tested code
         assertThatBucketConfigurationWas(
@@ -74,7 +71,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     fun testGrant_bucketConfiguration_secondTimeUnit_usesMinimumWindowDuration() {
         val callRateThreshold = 300
         rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, SECONDS, glideClient, valkeyTime)
-        rateLimiter.grant(1, context)
+        rateLimiter.grant(1, scope)
 
         // voluntarily hardcoding rather than calculating values so that the test's code does not simply duplicate the tested code
         assertThatBucketConfigurationWas(
@@ -88,7 +85,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     fun testGrant_newKey() {
         assertNoDataFor(DEFAULT_KEY_TIMESTAMPS, DEFAULT_KEY_COUNTS)
 
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(0))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -100,7 +97,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     @Test
     fun testGrant_bucketAggregation_roundsCurrentTimeToClosestBucket() {
         ticker.advanceBy(BUCKET_DURATION.plusMillis(25))
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(600))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -111,10 +108,10 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_bucketAggregation_createsNextBucketWhenNeeded() {
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION.multipliedBy(2).plusMillis(5))
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(0, 1200))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -126,13 +123,13 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_bucketAggregation_aggregatesToSameBucketWhenTimeIsStillWithinIt() {
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION.multipliedBy(2))
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(Duration.ofMillis(50))
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(0, 1200))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -144,16 +141,16 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_bucketAggregation_expiresBucketsOutsideWindow() {
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION.multipliedBy(2))
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION)
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.setAt(Instant.EPOCH.plus(WINDOW_DURATION)) // now we're at the very limit
-        assertThat(rateLimiter.grant(4, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(4, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(0, 1200, 1800, 60000))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -167,7 +164,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
         // the first 2 data points are completely outside the window, while the third still overlaps it since it's stored in a bucket corresponding
         // to the [BUCKET_DURATION * 3, BUCKET_DURATION * 4] interval
         ticker.advanceBy(BUCKET_DURATION.multipliedBy(3).plusMillis(5))
-        assertThat(rateLimiter.grant(5, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(5, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(1800, 60_000, 61_800))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -180,13 +177,13 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_bucketAggregation_allBucketsAreExpired() {
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION.multipliedBy(2))
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(WINDOW_DURATION.multipliedBy(2))
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         assertThatTimestampsAre(DEFAULT_KEY_TIMESTAMPS, listOf(121_200))
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
@@ -197,23 +194,23 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @Test
     fun testGrant_consumeAllTokensAndThenDenied() {
-        assertThat(rateLimiter.grant(THRESHOLD - 3, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(THRESHOLD - 3, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
     }
 
     @Test
     fun testGrant_deniedButLaterGranted() {
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.advanceBy(BUCKET_DURATION)
-        assertThat(rateLimiter.grant(THRESHOLD - 1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(THRESHOLD - 1, scope)).isEqualTo(RateLimiterResult.GRANTED)
 
         ticker.setAt(Instant.EPOCH.plus(WINDOW_DURATION).plus(BUCKET_DURATION))
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
 
         ticker.advanceBy(Duration.ofMillis(1))
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
     @Test
@@ -222,20 +219,20 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
         assertNoDataFor(OTHER_KEY_TIMESTAMPS, OTHER_KEY_COUNTS)
 
         val (r1, r2) = (THRESHOLD - 2 to 1)
-        assertThat(rateLimiter.grant(r1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatCountsAre(DEFAULT_KEY_COUNTS, mapOf(
             "total_count" to r1.toString(),
             "0" to r1.toString()
         ))
 
-        assertThat(rateLimiter.grant(r2, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r2, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatCountsAre(OTHER_KEY_COUNTS, mapOf(
             "total_count" to r2.toString(),
             "0" to r2.toString()
         ))
 
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.DENIED)
-        assertThat(rateLimiter.grant(3, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(3, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
     @Test

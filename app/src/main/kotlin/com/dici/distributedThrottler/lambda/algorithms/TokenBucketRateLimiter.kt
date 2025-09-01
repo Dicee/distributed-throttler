@@ -20,10 +20,10 @@ class TokenBucketRateLimiter(
     }
     private val refillRate = rateThreshold / unit.toMillis(1).toDouble()
 
-    override fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult {
+    override fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult {
         val granted = glideClient.invokeScript(
             LuaScripts.UPDATE_TOKEN_BUCKET, ScriptOptions.builder()
-                .key(context.toFineGrainKey(NAMESPACE))
+                .key(scope.toThrottlingKey(NAMESPACE))
                 .args(listOf(
                     requestedCapacity.toString(),
                     refillRate.toString(),

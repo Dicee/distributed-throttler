@@ -1,9 +1,8 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
-import com.dici.distributedThrottler.lambda.util.OTHER_CONTEXT
+import com.dici.distributedThrottler.lambda.util.OTHER_SCOPE
 import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
-import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,7 +49,7 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
         val requested = 4
 
         assertThatRemainingIsNullFor(DEFAULT_KEY)
-        assertThat(rateLimiter.grant(requested, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(requested, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, BURST_THRESHOLD - requested)
     }
 
@@ -58,43 +57,43 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
     fun testGrant_successiveGrants() {
         val (r1, r2) = 2 to 1
 
-        assertThat(rateLimiter.grant(r1, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(rateLimiter.grant(r2, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r1, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r2, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, BURST_THRESHOLD - r1 - r2)
     }
 
     @Test
     fun testGrant_consumeAllTokensAndThenDenied() {
-        assertThat(rateLimiter.grant(BURST_THRESHOLD, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(BURST_THRESHOLD, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, 0)
 
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
         assertThatRemainingIs(DEFAULT_KEY, 0)
     }
 
     @Test
     fun testGrant_deniedButLaterGranted_singleTokenRequested() {
-        assertThat(rateLimiter.grant(BURST_THRESHOLD, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(BURST_THRESHOLD, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
 
         ticker.advanceBy(Duration.ofMillis(333)) // we accept a base TPS of 3, so we'll add a token every 333 ms
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
 
         ticker.advanceBy(Duration.ofMillis(1))
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, 0)
     }
 
     @Test
     fun testGrant_deniedButLaterGranted_multipleTokensRequested() {
-        assertThat(rateLimiter.grant(BURST_THRESHOLD, context)).isEqualTo(RateLimiterResult.GRANTED)
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(BURST_THRESHOLD, scope)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.DENIED)
 
         ticker.advanceBy(TOKEN_GENERATION_FREQ)
-        assertThat(rateLimiter.grant(2, context)).isEqualTo(RateLimiterResult.DENIED) // a single token is not enough
+        assertThat(rateLimiter.grant(2, scope)).isEqualTo(RateLimiterResult.DENIED) // a single token is not enough
 
         ticker.advanceBy(Duration.ofMillis(1))
-        assertThat(rateLimiter.grant(1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, 0)
     }
 
@@ -103,13 +102,13 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
         assertThatRemainingIsNullFor(DEFAULT_KEY)
 
         val requested = 3
-        assertThat(rateLimiter.grant(requested, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(requested, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, BURST_THRESHOLD - requested)
 
         ticker.advanceBy(Duration.ofHours(5))
 
         // proves that even when we wait for a very long time, we fill back to at most the burst threshold
-        assertThat(rateLimiter.grant(BURST_THRESHOLD, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(BURST_THRESHOLD, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, 0)
     }
 
@@ -119,14 +118,14 @@ class TokenBucketRateLimiterTest : ValkeyTestBase() {
         assertThatRemainingIsNullFor(OTHER_KEY)
 
         val (r1, r2) = (3 to 1)
-        assertThat(rateLimiter.grant(r1, context)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r1, scope)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(DEFAULT_KEY, BURST_THRESHOLD - r1)
 
-        assertThat(rateLimiter.grant(r2, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(r2, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
         assertThatRemainingIs(OTHER_KEY, BURST_THRESHOLD - r2)
 
-        assertThat(rateLimiter.grant(3, context)).isEqualTo(RateLimiterResult.DENIED)
-        assertThat(rateLimiter.grant(3, OTHER_CONTEXT)).isEqualTo(RateLimiterResult.GRANTED)
+        assertThat(rateLimiter.grant(3, scope)).isEqualTo(RateLimiterResult.DENIED)
+        assertThat(rateLimiter.grant(3, OTHER_SCOPE)).isEqualTo(RateLimiterResult.GRANTED)
     }
 
     @Test

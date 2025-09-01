@@ -56,8 +56,8 @@ class SlidingWindowCounterRateLimiter(
         bucketDurationMs = windowDurationMs / BUCKET_COUNT
     }
 
-    override fun grant(requestedCapacity: Int, context: RequestContext): RateLimiterResult {
-        val hashSlot = context.toFineGrainKey(NAMESPACE)
+    override fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult {
+        val hashSlot = scope.toThrottlingKey(NAMESPACE)
         val granted = glideClient.invokeScript(LuaScripts.UPDATE_SLIDING_WINDOW_COUNTER, ScriptOptions.builder()
             .keys(listOf(
                 hashSlotKey(hashSlot, "timestamps"),
