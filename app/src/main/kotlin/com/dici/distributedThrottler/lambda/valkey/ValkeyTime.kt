@@ -1,9 +1,9 @@
 package com.dici.distributedThrottler.lambda.valkey
 
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -43,5 +43,11 @@ class FakeTicker(instant: Instant = Instant.EPOCH) {
     fun setAt(instant: Instant) {
         // note that the nano field contains the milliseconds of the last second
         _nanos = NANOSECONDS.convert(instant.toEpochMilli() / 1000, SECONDS) + instant.nano
+    }
+
+    fun asClock(): Clock = object : Clock() {
+        override fun instant(): Instant = Instant.ofEpochMilli(_nanos / 1000 / 1000)
+        override fun getZone(): ZoneId = ZoneId.of("UTC")
+        override fun withZone(zone: ZoneId): Clock { throw UnsupportedOperationException() }
     }
 }

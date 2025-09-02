@@ -1,9 +1,9 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
 import com.dici.distributedThrottler.lambda.config.ThrottlingScope
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
-import glide.api.GlideClient
 import glide.api.models.commands.ScriptOptions
 import java.util.concurrent.TimeUnit
 import kotlin.math.pow
@@ -49,7 +49,7 @@ private val sleeperWithJitter = Sleeper { millis, extraNanos -> Thread.sleep(mil
 class LeakyBucketRateLimiter(
     desiredRate: Int, // number of calls to grant within one unit of time
     unit: TimeUnit,
-    private val glideClient: GlideClient,
+    private val glideAdapter: GlideAdapter,
     private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
     private val sleeper: Sleeper = sleeperWithJitter,
 ) : RateLimiter {
@@ -83,7 +83,7 @@ class LeakyBucketRateLimiter(
         return if (retryWaitTimeMicros == 0L) RateLimiterResult.GRANTED else RateLimiterResult.DENIED
     }
 
-    private fun getWaitTimeMicros(requestedCapacity: Int, scope: ThrottlingScope) = glideClient.invokeScript(
+    private fun getWaitTimeMicros(requestedCapacity: Int, scope: ThrottlingScope) = glideAdapter.client().invokeScript(
         LuaScripts.GET_LEAKY_BUCKET_WAIT_TIME, ScriptOptions.builder()
             .key(scope.toThrottlingKey(NAMESPACE))
             .args(

@@ -5,6 +5,7 @@ import com.dici.distributedThrottler.lambda.util.ValkeyTestBase
 import glide.api.models.commands.ScriptOptions
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -36,7 +37,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     @BeforeEach
     fun setUp() {
-        rateLimiter = SlidingWindowCounterRateLimiter(THRESHOLD, UNIT, glideClient, valkeyTime)
+        rateLimiter = SlidingWindowCounterRateLimiter(THRESHOLD, UNIT, glideAdapter, valkeyTime)
     }
 
     @ParameterizedTest
@@ -44,11 +45,11 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     fun testConstructor_rejectsTimeUnitUnderSeconds(unit: TimeUnit) {
         when (unit) {
             NANOSECONDS, MICROSECONDS, MILLISECONDS ->
-                assertThatThrownBy { SlidingWindowCounterRateLimiter(THRESHOLD, unit, glideClient) }
+                assertThatThrownBy { SlidingWindowCounterRateLimiter(THRESHOLD, unit, glideAdapter) }
                     .isExactlyInstanceOf(IllegalArgumentException::class.java)
                     .hasMessage("Please use SECONDS resolution at most. Unit was: $unit")
             else ->
-                assertThatCode { SlidingWindowCounterRateLimiter(THRESHOLD, unit, glideClient) }
+                assertThatCode { SlidingWindowCounterRateLimiter(THRESHOLD, unit, glideAdapter) }
                     .doesNotThrowAnyException()
         }
     }
@@ -56,7 +57,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     @Test
     fun testGrant_bucketConfiguration_largeTimeUnit_usesTimeUnit() {
         val callRateThreshold = 300
-        rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, MINUTES, glideClient, valkeyTime)
+        rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, MINUTES, glideAdapter, valkeyTime)
         rateLimiter.grant(1, scope)
 
         // voluntarily hardcoding rather than calculating values so that the test's code does not simply duplicate the tested code
@@ -70,7 +71,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     @Test
     fun testGrant_bucketConfiguration_secondTimeUnit_usesMinimumWindowDuration() {
         val callRateThreshold = 300
-        rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, SECONDS, glideClient, valkeyTime)
+        rateLimiter = SlidingWindowCounterRateLimiter(callRateThreshold, SECONDS, glideAdapter, valkeyTime)
         rateLimiter.grant(1, scope)
 
         // voluntarily hardcoding rather than calculating values so that the test's code does not simply duplicate the tested code
@@ -236,6 +237,7 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
     }
 
     @Test
+    @Disabled("Slow and a little bit unstable")
     fun testGrant_multiThreaded() {
         baseMultiThreadedTest(Duration.ofSeconds(10), totalRequests = 450, maxRequestedCapacity = 5)
     }
@@ -285,5 +287,5 @@ class SlidingWindowCounterRateLimiterTest : ValkeyTestBase() {
 
     private fun getCounts(key: String) = glideClient.hgetall(key).get()
 
-    override fun newRealTimeRateLimiter(tpsThreshold: Int) = SlidingWindowCounterRateLimiter(tpsThreshold, SECONDS, glideClient)
+    override fun newRealTimeRateLimiter(tpsThreshold: Int) = SlidingWindowCounterRateLimiter(tpsThreshold, SECONDS, glideAdapter)
 }

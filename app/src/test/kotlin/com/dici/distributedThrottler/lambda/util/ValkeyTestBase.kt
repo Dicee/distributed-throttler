@@ -4,8 +4,9 @@ import com.dici.distributedThrottler.lambda.algorithms.RateLimiter
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiterResult
 import com.dici.distributedThrottler.lambda.config.ThrottlingScope
 import com.dici.distributedThrottler.lambda.valkey.FakeTicker
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
-import com.dici.distributedThrottler.lambda.valkey.newLocalClient
+import com.dici.distributedThrottler.lambda.valkey.newLocalGlideClient
 import glide.api.GlideClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -26,6 +27,7 @@ val OTHER_SCOPE = ThrottlingScope("other", "key")
  */
 abstract class ValkeyTestBase {
     protected val scope = ThrottlingScope("dummy", "test")
+    protected lateinit var glideAdapter: GlideAdapter
     protected lateinit var glideClient: GlideClient
     protected lateinit var ticker: FakeTicker
 
@@ -34,12 +36,12 @@ abstract class ValkeyTestBase {
 
     @BeforeEach
     fun beforeEach() {
-        glideClient = spy(newLocalClient())
+        glideClient = spy(newLocalGlideClient())
+        glideAdapter = GlideAdapter(glideClient)
         glideClient.flushall().get()
 
         ticker = FakeTicker()
     }
-
 
     protected fun baseMultiThreadedTest(
         duration: Duration,

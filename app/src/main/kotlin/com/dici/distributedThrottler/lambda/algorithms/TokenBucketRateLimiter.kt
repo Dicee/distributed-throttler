@@ -1,9 +1,9 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
 import com.dici.distributedThrottler.lambda.config.ThrottlingScope
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
-import glide.api.GlideClient
 import glide.api.models.commands.ScriptOptions
 import java.util.concurrent.TimeUnit
 
@@ -13,7 +13,7 @@ class TokenBucketRateLimiter(
     rateThreshold: Int,
     private val burstRateThreshold: Int,
     unit: TimeUnit,
-    private val glideClient: GlideClient,
+    private val glideAdapter: GlideAdapter,
     private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
 ) : RateLimiter {
     init {
@@ -22,7 +22,7 @@ class TokenBucketRateLimiter(
     private val refillRate = rateThreshold / unit.toMillis(1).toDouble()
 
     override fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult {
-        val granted = glideClient.invokeScript(
+        val granted = glideAdapter.client().invokeScript(
             LuaScripts.UPDATE_TOKEN_BUCKET, ScriptOptions.builder()
                 .key(scope.toThrottlingKey(NAMESPACE))
                 .args(listOf(

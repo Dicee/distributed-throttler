@@ -11,7 +11,7 @@ import com.dici.distributedThrottler.lambda.config.ThrottlingPolicy
 import com.dici.distributedThrottler.lambda.config.ThrottlingPolicyStore
 import com.dici.distributedThrottler.lambda.config.ThrottlingScope
 import com.dici.distributedThrottler.lambda.metrics.ThrottlingMetricsPublisher
-import glide.api.GlideClient
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -35,7 +35,7 @@ class HandlerTest {
 
     @Mock private lateinit var throttlingPolicyStore: ThrottlingPolicyStore
 
-    @Mock private lateinit var glideClient: GlideClient
+    @Mock private lateinit var glideAdapter: GlideAdapter
     @Mock private lateinit var metricsPublisher : ThrottlingMetricsPublisher
     @Mock private lateinit var context : Context
 
@@ -49,7 +49,7 @@ class HandlerTest {
 
     @BeforeEach
     fun setUp() {
-        handler = Handler(throttlingPolicyStore, glideClient, metricsPublisher)
+        handler = Handler(throttlingPolicyStore, glideAdapter, metricsPublisher)
     }
 
     @Test
@@ -93,12 +93,12 @@ class HandlerTest {
     }
 
     private fun mockOperationPolicy() {
-        `when`(operationPolicy.newRateLimiter(algorithm, glideClient)).thenReturn(operationRateLimiter)
+        `when`(operationPolicy.newRateLimiter(algorithm, glideAdapter)).thenReturn(operationRateLimiter)
         `when`(operationPolicy.scope).thenReturn(scope)
     }
 
     private fun mockGlobalPolicy() {
-        `when`(globalPolicy.newRateLimiter(algorithm, glideClient)).thenReturn(globalRateLimiter)
+        `when`(globalPolicy.newRateLimiter(algorithm, glideAdapter)).thenReturn(globalRateLimiter)
         `when`(globalPolicy.scope).thenReturn(globalScope)
     }
 

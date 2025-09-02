@@ -5,8 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler
 import com.dici.distributedThrottler.lambda.algorithms.RateLimiterResult
 import com.dici.distributedThrottler.lambda.config.*
 import com.dici.distributedThrottler.lambda.metrics.ThrottlingMetricsPublisher
-import com.dici.distributedThrottler.lambda.valkey.newLocalClient
-import glide.api.GlideClient
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
+import software.amazon.awssdk.regions.Region
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -24,24 +24,31 @@ private val singletonThrottlingPolicyStore: ThrottlingPolicyStore by lazy {
     ))
 }
 
-private val singletonGlideClient: GlideClient by lazy { newLocalClient() }
+private val singletonGlideAdapter: GlideAdapter by lazy {
+    val userId = System.getenv("ValkeyCacheUserId")!!
+    val cacheName = System.getenv("ValkeyCacheName")!!
+    val cacheEndpoint = System.getenv("ValkeyCacheEndpoint")!!
+    val cachePort = System.getenv("ValkeyCachePort")!!.toInt()
+    val region = Region.of(System.getenv("AWS_REGION")!!)
+    GlideAdapter.newIamAuthenticatedGlideAdapter(userId, cacheName, cacheEndpoint, cachePort, region)
+}
 private val singleMetricsPublisher: ThrottlingMetricsPublisher by lazy { ThrottlingMetricsPublisher() }
 
 class Handler(
     private val throttlingPolicyStore: ThrottlingPolicyStore,
-    private val glideClient: GlideClient,
+    private val glideAdapter: GlideAdapter,
     private val metricsPublisher: ThrottlingMetricsPublisher,
 ) : RequestHandler<Request, RateLimiterResult> {
     // for Lambda
     @Suppress("unused")
-    constructor() : this(singletonThrottlingPolicyStore, singletonGlideClient, singleMetricsPublisher)
+    constructor() : this(singletonThrottlingPolicyStore, singletonGlideAdapter, singleMetricsPublisher)
 
     override fun handleRequest(request: Request, context: Context): RateLimiterResult {
         val algorithm = ThrottlingAlgorithm.valueOf(request.algorithm)
 
         val applicablePolicies = throttlingPolicyStore.getApplicablePolicies(request.identity, request.operation)
         val overallResult = RateLimiterResult.from(applicablePolicies.all { policy ->
-            policy.newRateLimiter(algorithm, glideClient).grant(1, policy.scope) == RateLimiterResult.GRANTED
+            policy.newRateLimiter(algorithm, glideAdapter).grant(1, policy.scope) == RateLimiterResult.GRANTED
         })
 
         val fineGrainScope = ThrottlingScope(request.identity, request.operation)

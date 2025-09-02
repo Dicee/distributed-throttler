@@ -1,10 +1,10 @@
 package com.dici.distributedThrottler.lambda.algorithms
 
 import com.dici.distributedThrottler.lambda.config.ThrottlingScope
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import com.dici.distributedThrottler.lambda.valkey.ValkeyTime
 import com.dici.distributedThrottler.lambda.valkey.hashSlotKey
 import com.dici.distributedThrottler.lambda.valkey.lua.LuaScripts
-import glide.api.GlideClient
 import glide.api.models.commands.ScriptOptions
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
@@ -39,7 +39,7 @@ private const val NAMESPACE = "sliding-window"
 class SlidingWindowCounterRateLimiter(
     callRateThreshold: Int,
     unit: TimeUnit,
-    private val glideClient: GlideClient,
+    private val glideAdapter: GlideAdapter,
     private val valkeyTime: ValkeyTime = ValkeyTime.serverSide(),
 ) : RateLimiter {
     private val windowDurationMs: Int
@@ -59,7 +59,7 @@ class SlidingWindowCounterRateLimiter(
 
     override fun grant(requestedCapacity: Int, scope: ThrottlingScope): RateLimiterResult {
         val hashSlot = scope.toThrottlingKey(NAMESPACE)
-        val granted = glideClient.invokeScript(LuaScripts.UPDATE_SLIDING_WINDOW_COUNTER, ScriptOptions.builder()
+        val granted = glideAdapter.client().invokeScript(LuaScripts.UPDATE_SLIDING_WINDOW_COUNTER, ScriptOptions.builder()
             .keys(listOf(
                 hashSlotKey(hashSlot, "timestamps"),
                 hashSlotKey(hashSlot, "counts"),

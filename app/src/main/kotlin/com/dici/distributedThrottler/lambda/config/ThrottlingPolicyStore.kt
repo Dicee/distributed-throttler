@@ -5,7 +5,7 @@ import com.dici.distributedThrottler.lambda.algorithms.RateLimiter
 import com.dici.distributedThrottler.lambda.algorithms.SlidingWindowCounterRateLimiter
 import com.dici.distributedThrottler.lambda.algorithms.TokenBucketRateLimiter
 import com.dici.distributedThrottler.lambda.config.ThrottlingAlgorithm.*
-import glide.api.GlideClient
+import com.dici.distributedThrottler.lambda.valkey.GlideAdapter
 import java.util.concurrent.TimeUnit
 
 // just makes things nice to read, it doesn't contribute to type safety at all
@@ -38,12 +38,12 @@ data class ThrottlingScope(val identity: Identity, val operation: Operation) {
 }
 
 data class ThrottlingPolicy(val scope: ThrottlingScope, val rateLimits: RateLimits) {
-    fun newRateLimiter(algorithm: ThrottlingAlgorithm, glideClient: GlideClient): RateLimiter {
+    fun newRateLimiter(algorithm: ThrottlingAlgorithm, glideAdapter: GlideAdapter): RateLimiter {
         val (threshold, burstThreshold, unit) = rateLimits
         return when (algorithm) {
-            TOKEN_BUCKET -> TokenBucketRateLimiter(threshold, burstThreshold ?: threshold, unit, glideClient)
-            LEAKY_BUCKET -> LeakyBucketRateLimiter(threshold, unit, glideClient)
-            SLIDING_WINDOW_COUNTER -> SlidingWindowCounterRateLimiter(threshold, unit, glideClient)
+            TOKEN_BUCKET -> TokenBucketRateLimiter(threshold, burstThreshold ?: threshold, unit, glideAdapter)
+            LEAKY_BUCKET -> LeakyBucketRateLimiter(threshold, unit, glideAdapter)
+            SLIDING_WINDOW_COUNTER -> SlidingWindowCounterRateLimiter(threshold, unit, glideAdapter)
         }
     }
 }
