@@ -6,7 +6,6 @@
 
 ### Infrastructure
 
-- set up a Valkey cache with CDK
 - set up a Memcached cache with CDK
 
 ### Core logic
@@ -45,6 +44,7 @@
 ### Infrastructure
 
 - set up logging and metric publishing
+- set up a Valkey cache with CDK
 
 ### Core logic
 
