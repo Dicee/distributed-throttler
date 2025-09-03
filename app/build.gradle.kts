@@ -5,7 +5,9 @@ plugins {
 val mockitoAgent = configurations.create("mockitoAgent")
 dependencies {
     implementation("software.amazon.awssdk:auth:2.33.0")
+    implementation("software.amazon.awssdk:lambda:2.33.0")
     implementation("com.amazonaws:aws-lambda-java-core:1.2.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     implementation("io.valkey:valkey-glide:2.0.1:linux-x86_64")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.19.2")
@@ -20,6 +22,9 @@ dependencies {
 
     testImplementation(libs.mockito)
     testImplementation("org.mockito:mockito-junit-jupiter:${libs.versions.mockito.get()}")
+
+    testRuntimeOnly("software.amazon.awssdk:sso:2.33.0")
+    testRuntimeOnly("software.amazon.awssdk:ssooidc:2.33.0")
 
     mockitoAgent(libs.mockito) { isTransitive = false }
 }

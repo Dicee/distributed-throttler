@@ -6,7 +6,6 @@
 
 #### Manual against real resources
 
-- implement a script capable to send traffic to the throttler Lambda following a pre-defined traffic pattern
 - screenshot the result of the experiments and add them to the repo
 
 ### Minor improvements
@@ -56,3 +55,4 @@
 #### Manual against real resources
 
 - implement Lambda endpoint that can switch between throttler implementations, apply throttling and publish metrics
+- implement a script capable to send traffic to the throttler Lambda following a pre-defined traffic pattern
