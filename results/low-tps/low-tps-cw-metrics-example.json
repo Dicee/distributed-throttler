@@ -1,0 +1,21 @@
+{
+  "metrics": [
+    [ { "expression": "m2-m1", "label": "Denied", "id": "e1", "color": "#fe6e73" } ],
+    [ "DistributedThrottler", "Granted", "LogGroup", "ThrottlerLambda", "ServiceName", "ThrottlerLambda", "ServiceType", "AWS::Lambda::Function", "Operation", "ListResources", "Identity", "LowTpsClient", "Algorithm", "TOKEN_BUCKET", { "color": "#69ae34", "stat": "Sum", "id": "m1" } ],
+    [ "...", { "label": "Attempted", "color": "#08aad2", "id": "m2" } ]
+  ],
+  "view": "timeSeries",
+  "stacked": false,
+  "region": "eu-north-1",
+  "period": 60,
+  "stat": "SampleCount",
+  "title": "LowTpsClient - TOKEN_BUCKET",
+  "annotations": {
+    "horizontal": [
+      {
+        "label": "LowTpsClient:ListResources threshold (per minute)",
+        "value": 20
+      }
+    ]
+  }
+}

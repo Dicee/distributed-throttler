@@ -4,10 +4,6 @@
 
 - At the end of the project, make sure WSL doesn't start a local Redis server every time it boots. I prefer starting it manually.
 
-#### Manual against real resources
-
-- screenshot the result of the experiments and add them to the repo
-
 ### Minor improvements
 
 - consider using coroutines, in particular for the leaky bucket implementations (though to do it well it's likely going to force moving everything to suspendable functions)

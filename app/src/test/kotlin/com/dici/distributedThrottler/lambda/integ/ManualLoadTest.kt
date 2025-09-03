@@ -16,12 +16,9 @@ import java.util.concurrent.TimeUnit
 private val mapper = ObjectMapper()
 
 // I do not have CI/CD for this project so this file is aimed at making manual runs against different algorithms
+@OptIn(DelicateCoroutinesApi::class)
 fun main(): Unit = runBlocking {
     try {
-        val trafficFileName = "traffic-LowTpsClient-ListResources.tsv"
-        val simulatedTraffic = parseTrafficFile(File(trafficFileName))
-        val throttlingAlgorithm = ThrottlingAlgorithm.TOKEN_BUCKET
-
         val lambdaClient = LambdaClient.builder()
             .region(Region.EU_NORTH_1)
             .credentialsProvider(ProfileCredentialsProvider.builder()
@@ -30,10 +27,36 @@ fun main(): Unit = runBlocking {
             )
             .build()
 
-        val (client, operation) = simulatedTraffic
-        log.info("Starting simulation for $client:$operation")
+        val algorithm = ThrottlingAlgorithm.SLIDING_WINDOW_COUNTER
+        runHighTpsSimulation(lambdaClient, algorithm)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
 
-        simulateTraffic(simulatedTraffic, throttlingAlgorithm, lambdaClient)
+@OptIn(DelicateCoroutinesApi::class)
+private fun runHighTpsSimulation(lambdaClient: LambdaClient, algorithm: ThrottlingAlgorithm) {
+    runBlocking(newFixedThreadPoolContext(8, "ManualLoadTest")) {
+        launch { runSimulationFor(lambdaClient, "traffic-HighTpsClient-ListResources.tsv", algorithm) }
+//        launch { runSimulationFor(lambdaClient, "traffic-HighTpsClient-AddResource.tsv", algorithm) }
+    }
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+private fun runLowTpsSimulation(lambdaClient: LambdaClient, algorithm: ThrottlingAlgorithm) {
+    runBlocking(newFixedThreadPoolContext(5, "ManualLoadTest")) {
+        runSimulationFor(lambdaClient, "traffic-LowTpsClient-ListResources.tsv", algorithm)
+    }
+}
+
+private suspend fun CoroutineScope.runSimulationFor(lambdaClient: LambdaClient, trafficFileName: String, algorithm: ThrottlingAlgorithm) {
+    val simulatedTraffic = parseTrafficFile(File(trafficFileName))
+
+    val (client, operation) = simulatedTraffic
+    log.info("Starting simulation for $client:$operation with algorithm $algorithm")
+
+    try {
+        simulateTraffic(simulatedTraffic, algorithm, lambdaClient)
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -61,29 +84,31 @@ private fun parseTrafficFile(file: File): SimulatedTraffic {
 private fun serializeRequest(request: Request) = SdkBytes.fromUtf8String(mapper.writeValueAsString(request))
 
 @OptIn(DelicateCoroutinesApi::class)
-private fun simulateTraffic(simulatedTraffic: SimulatedTraffic, throttlingAlgorithm: ThrottlingAlgorithm, lambdaClient: LambdaClient) {
+private suspend fun CoroutineScope.simulateTraffic(simulatedTraffic: SimulatedTraffic, throttlingAlgorithm: ThrottlingAlgorithm, lambdaClient: LambdaClient) {
     // the payload will be the same for all the calls in this file, so serialize it only once
     val request = Request(simulatedTraffic.client, simulatedTraffic.operation, throttlingAlgorithm.name)
     val payload = serializeRequest(request)
 
+    val start = System.currentTimeMillis()
+
     // assume the whole file honors the same interval, which is true for files created by TrafficGenerator
     val intervalMillis = simulatedTraffic.calls[1].timestamp - simulatedTraffic.calls[0].timestamp
     for (callsToMake in simulatedTraffic.calls) {
-        val (_, callCount) = callsToMake
+        val (timestampMs, callCount) = callsToMake
 
-        runBlocking {
-            if (callCount == 0) {
-                log.info("No calls to make for this time interval, delaying by $intervalMillis ms")
-                delay(intervalMillis)
-            } else {
-                val delayMillis = intervalMillis / callCount
-                for (i in 1..callCount) {
-                    launch(newFixedThreadPoolContext(5, "TrafficGenWorkers")) {
-                        callLambda(lambdaClient, payload)
-                        log.info("Completed call $i of $callCount")
+        if (callCount == 0) {
+            if (Math.random() < 0.2)  log.info("No calls to make for this time interval, delaying by $intervalMillis ms")
+            delay(intervalMillis)
+        } else {
+            val delayMillis = intervalMillis / callCount
+            for (i in 1..callCount) {
+                launch {
+                    callLambda(lambdaClient, payload)
+                    if (Math.random() < 0.01) {
+                        log.info("Completed call $i of $callCount. Actual millis vs expected: ${System.currentTimeMillis() - start - timestampMs}")
                     }
-                    delay(delayMillis)
                 }
+                delay(delayMillis)
             }
         }
     }

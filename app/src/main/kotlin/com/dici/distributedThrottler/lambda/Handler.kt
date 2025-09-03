@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 private val singletonThrottlingPolicyStore: ThrottlingPolicyStore by lazy {
     ThrottlingPolicyStore(mapOf(
+        // Well... it's not really "high" TPS, but I don't want to have a massive AWS bill, do I?
         "HighTpsClient" to mapOf(
             "ListResources" to RateLimits(threshold = 25, unit = SECONDS),
             "AddResource" to RateLimits(threshold = 30, burstThreshold = 38, unit = SECONDS),
