@@ -24,7 +24,9 @@ private const val LAMBDA_USER_ID = "throttler-lambda"
 
 class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope, "ThrottlerStack", props) {
     init {
-        val vpc = Vpc.Builder.create(this, "ThrottlerVpc")
+        var vpcId = "ThrottlerVpc"
+        val vpc = Vpc.Builder.create(this, vpcId)
+            .vpcName(vpcId)
             .maxAzs(2)
             .build()
 
@@ -34,15 +36,17 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
 
     private fun createValkeyCache(vpc: Vpc): ValkeyCache {
         val baseResourceId = "ValkeyCache"
+        val securityGroupId = "${baseResourceId}SecurityGroup"
 
         val privateSubnetIds = vpc.privateSubnets.map(ISubnet::getSubnetId)
-        val cacheSecurityGroup = SecurityGroup.Builder.create(this, "${baseResourceId}SecurityGroup")
+        val securityGroup = SecurityGroup.Builder.create(this, securityGroupId)
+            .securityGroupName(securityGroupId)
             .vpc(vpc)
             .description("Security group for ElastiCache Valkey cluster")
             .allowAllOutbound(true)
             .build()
 
-        cacheSecurityGroup.addIngressRule(cacheSecurityGroup, Port.tcp(6379), "Allow inbound from self")
+        securityGroup.addIngressRule(securityGroup, Port.tcp(6379), "Allow inbound from self")
 
         val cacheUsageLimits = CacheUsageLimitsProperty.builder()
             .dataStorage(DataStorageProperty.builder().maximum(1).unit("GB").build())
@@ -60,14 +64,14 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
             .majorEngineVersion("8")
             .cacheUsageLimits(cacheUsageLimits)
             .subnetIds(privateSubnetIds)
-            .securityGroupIds(listOf(cacheSecurityGroup.securityGroupId))
+            .securityGroupIds(listOf(securityGroup.securityGroupId))
             .userGroupId(valkeyCacheGroup.userGroup.userGroupId)
             .build()
 
         valkeyCache.applyRemovalPolicy(RemovalPolicy.DESTROY) // only because this is a project for fun, would not generally be a good idea in prod
         valkeyCache.addDependency(valkeyCacheGroup.userGroup)
 
-        return ValkeyCache(valkeyCache, valkeyCacheGroup)
+        return ValkeyCache(valkeyCache, valkeyCacheGroup, securityGroup)
     }
 
     private fun createValkeyCacheUserGroup(baseResourceId: String, engine: String): ValkeyUserGroup {
@@ -116,6 +120,7 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
             ))
             .build()
 
+        val vpcDefaultSecurityGroup = SecurityGroup.fromSecurityGroupId(this, "VpcDefaultSecurityGroup", vpc.vpcDefaultSecurityGroup)
         return DockerImageFunction.Builder.create(this, functionName)
             .functionName(functionName)
             .code(DockerImageCode.fromImageAsset("docker"))
@@ -124,6 +129,7 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
             .memorySize(256)
             .vpc(vpc)
             .vpcSubnets(SubnetSelection.builder().subnets(vpc.privateSubnets).build())
+            .securityGroups(listOf(valkeyCache.securityGroup, vpcDefaultSecurityGroup))
             .environment(
                 mapOf(
                     "ValkeyCacheName" to valkeyCache.cache.serverlessCacheName.lowercase(),
@@ -137,4 +143,4 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
 }
 
 private data class ValkeyUserGroup(val lambdaUser: CfnUser, val userGroup: CfnUserGroup)
-private data class ValkeyCache(val cache: CfnServerlessCache, val userGroup: ValkeyUserGroup)
+private data class ValkeyCache(val cache: CfnServerlessCache, val userGroup: ValkeyUserGroup, val securityGroup: SecurityGroup)
