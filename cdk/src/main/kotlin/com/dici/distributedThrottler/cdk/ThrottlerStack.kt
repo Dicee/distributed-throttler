@@ -80,8 +80,8 @@ class ThrottlerStack(scope: Construct, props: StackProps? = null) : Stack(scope,
             .userId(LAMBDA_USER_ID)
             .engine(engine)
             .authenticationMode(mapOf("Type" to "iam"))
-            // following least-privilege principle
-            .accessString("on ~* -@all +@hash +@sortedset +PEXPIRE +TIME")
+            // following least-privilege principle, it seems to be the minimum I could give for it to work
+            .accessString("on ~* -@all +@hash +@sortedset +pexpire +time +info +evalsha +script|load")
             .build()
 
         val userGroup = CfnUserGroup.Builder.create(this, "${baseResourceId}UserGroup")
