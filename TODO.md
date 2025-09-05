@@ -1,9 +1,5 @@
 ## TODO
 
-### Basic set up
-
-- At the end of the project, make sure WSL doesn't start a local Redis server every time it boots. I prefer starting it manually.
-
 ### Minor improvements
 
 - consider using coroutines, in particular for the leaky bucket implementations (though to do it well it's likely going to force moving everything to suspendable functions)
@@ -16,6 +12,7 @@
 - initial AWS account setup, complete with SSO access
 - initial Kotlin CDK setup
 - initial Docker setup for a Kotlin Lambda
+- At the end of the project, make sure WSL doesn't start a local Redis server every time it boots. I prefer starting it manually.
 
 ### Infrastructure
 
